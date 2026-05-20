@@ -531,6 +531,27 @@ CUSTOM_CSS = """
     outline-offset: 2px !important;
 }
 
+/* Secondary button */
+.btn-secondary {
+    background: var(--bg-alt) !important;
+    color: #475569 !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+.btn-secondary:hover {
+    background: var(--border) !important;
+    color: #1e293b !important;
+}
+.btn-secondary:focus-visible {
+    outline: 2px solid var(--navy-600) !important;
+    outline-offset: 2px !important;
+}
+
 /* ===== Thinking Steps ===== */
 .thinking-steps {
     background: linear-gradient(135deg, #f8faff, #f0fdfa);
@@ -1366,7 +1387,7 @@ def build_app():
                     )
                     with gr.Row():
                         chat_btn = gr.Button("Analyze", variant="primary", elem_classes="btn-primary")
-                        clear_btn = gr.Button("Clear", variant="secondary", size="sm")
+                        clear_btn = gr.Button("Clear", variant="secondary", elem_classes="btn-secondary")
 
                 # Example chips
                 example_btns = []
