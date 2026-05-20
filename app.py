@@ -457,14 +457,11 @@ CUSTOM_CSS = """
     border-radius: 8px 8px 0 0 !important;
 }
 
-/* Ensure all text elements are readable */
-.gradio-container * {
-    color: inherit !important;
-}
-.gradio-container button:not(.btn-primary):not(.example-chip) {
+/* Ensure button text is readable */
+.gradio-container button {
     color: #475569 !important;
 }
-.gradio-container button:not(.btn-primary):not(.example-chip):hover {
+.gradio-container button:hover {
     color: #1e293b !important;
 }
 
