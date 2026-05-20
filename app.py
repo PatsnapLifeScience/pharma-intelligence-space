@@ -433,7 +433,7 @@ CUSTOM_CSS = """
     font-size: 13.5px !important;
     font-weight: 500 !important;
     border: none !important;
-    color: var(--text-secondary) !important;
+    color: #475569 !important;
     transition: color 0.15s ease, background 0.15s ease !important;
     background: transparent !important;
     border-bottom: 2px solid transparent !important;
@@ -446,8 +446,8 @@ CUSTOM_CSS = """
 }
 .tab-nav button.selected {
     background: transparent !important;
-    color: var(--navy-900) !important;
-    border-bottom: 2px solid var(--navy-900) !important;
+    color: #020617 !important;
+    border-bottom: 2px solid #020617 !important;
     box-shadow: none !important;
     font-weight: 600 !important;
 }
@@ -455,6 +455,17 @@ CUSTOM_CSS = """
     outline: 2px solid var(--navy-600) !important;
     outline-offset: -2px !important;
     border-radius: 8px 8px 0 0 !important;
+}
+
+/* Ensure all text elements are readable */
+.gradio-container * {
+    color: inherit !important;
+}
+.gradio-container button:not(.btn-primary):not(.example-chip) {
+    color: #475569 !important;
+}
+.gradio-container button:not(.btn-primary):not(.example-chip):hover {
+    color: #1e293b !important;
 }
 
 /* ===== Input ===== */
