@@ -300,21 +300,29 @@ CUSTOM_CSS = """
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Force all text to be dark and readable — override Gradio defaults */
+/* Force ALL text dark — override Gradio Soft theme everywhere */
 .gradio-container .prose,
-.gradio-container .markdown,
-.gradio-container p,
-.gradio-container h1, .gradio-container h2, .gradio-container h3, .gradio-container h4,
-.gradio-container li, .gradio-container td, .gradio-container th,
-.gradio-container label, .gradio-container .label-text {
+.gradio-container .prose *,
+.gradio-container .md,
+.gradio-container .md *,
+.gradio-container [class*="markdown"],
+.gradio-container [class*="markdown"] * {
     color: var(--text) !important;
 }
-.gradio-container .prose h2,
-.gradio-container .markdown h2 { color: var(--navy-950) !important; font-weight: 700 !important; }
-.gradio-container .prose h3,
-.gradio-container .markdown h3 { color: var(--text) !important; font-weight: 600 !important; }
-
-/* Fix table cell colors */
+.gradio-container .prose h2, .gradio-container .md h2,
+.gradio-container [class*="markdown"] h2 {
+    color: var(--navy-950) !important;
+    font-weight: 700 !important;
+}
+.gradio-container .prose strong, .gradio-container .md strong,
+.gradio-container [class*="markdown"] strong {
+    color: var(--navy-900) !important;
+}
+.gradio-container label, .gradio-container .label-text,
+.gradio-container .label-container span {
+    color: var(--text) !important;
+    font-weight: 500 !important;
+}
 .gradio-container td { color: var(--text) !important; }
 .gradio-container th { color: var(--text-secondary) !important; }
 
