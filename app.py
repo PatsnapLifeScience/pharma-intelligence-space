@@ -271,8 +271,8 @@ CUSTOM_CSS = """
     --surface: #ffffff;
     --bg: #f8fafc;
     --bg-alt: #f1f5f9;
-    --text: #0f172a;
-    --text-secondary: #475569;
+    --text: #1e293b;
+    --text-secondary: #64748b;
     --text-tertiary: #94a3b8;
     --border: #e2e8f0;
     --border-light: #f1f5f9;
@@ -325,6 +325,18 @@ CUSTOM_CSS = """
 }
 .gradio-container td { color: var(--text) !important; }
 .gradio-container th { color: var(--text-secondary) !important; }
+
+/* Ensure header text is always white and visible */
+.header-container,
+.header-container * {
+    color: #ffffff !important;
+}
+.header-title {
+    color: #ffffff !important;
+}
+.header-subtitle {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
 
 /* ===== Header ===== */
 .header-container {
