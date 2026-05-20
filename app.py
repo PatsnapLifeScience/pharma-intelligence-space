@@ -1181,6 +1181,12 @@ def build_app():
 
     with gr.Blocks(
         title="PatSnap Pharma Intelligence",
+        css=CUSTOM_CSS,
+        theme=gr.themes.Soft(
+            primary_hue="blue",
+            secondary_hue="emerald",
+            neutral_hue="slate",
+        ),
         analytics_enabled=False,
     ) as app:
         create_header()
@@ -1385,10 +1391,4 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=7860,
         show_error=True,
-        css=CUSTOM_CSS,
-        theme=gr.themes.Soft(
-            primary_hue="blue",
-            secondary_hue="emerald",
-            neutral_hue="slate",
-        ),
     )
