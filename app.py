@@ -1322,16 +1322,9 @@ def build_app():
         ).set(
             body_text_color="*neutral_900",
             body_text_color_subdued="*neutral_800",
-            body_text_color_dark="*neutral_900",
             block_title_text_color="*neutral_900",
-            block_title_text_color_dark="*neutral_200",
             block_label_text_color="*neutral_800",
-            block_label_text_color_dark="*neutral_300",
-            input_text_color="*neutral_900",
             link_text_color="*primary_600",
-            link_text_color_dark="*primary_300",
-            table_odd_background_fill="*neutral_50",
-            table_even_background_fill="*neutral_100",
         ),
         analytics_enabled=False,
     ) as app:
