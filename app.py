@@ -256,219 +256,311 @@ MOCK_DRUG_SEARCH = {
 # =============================================================================
 
 CUSTOM_CSS = """
-/* ===== Global ===== */
+/* ===== Design Tokens ===== */
 :root {
-    --primary: #1a56db;
-    --primary-light: #3b82f6;
-    --primary-dark: #1e3a8a;
-    --accent: #059669;
-    --accent-light: #10b981;
+    --navy-900: #0a1628;
+    --navy-800: #122036;
+    --navy-700: #1a3050;
+    --navy-600: #1e3a5f;
+    --blue-500: #1a5fa8;
+    --teal-500: #0891b2;
+    --teal-400: #06b6d4;
+    --teal-50: #ecfeff;
+    --surface: #ffffff;
     --bg: #f8fafc;
-    --bg-card: #ffffff;
-    --text: #1e293b;
-    --text-secondary: #64748b;
+    --bg-alt: #f1f5f9;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
     --border: #e2e8f0;
-    --radius: 12px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --border-light: #f1f5f9;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-sm: 0 1px 3px rgba(15,23,42,0.06);
+    --shadow: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -1px rgba(15,23,42,0.04);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .gradio-container {
-    max-width: 1200px !important;
+    max-width: 1120px !important;
     margin: 0 auto !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-family: var(--font) !important;
     background: var(--bg) !important;
+    -webkit-font-smoothing: antialiased;
 }
 
 /* ===== Header ===== */
 .header-container {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-    border-radius: var(--radius);
-    padding: 32px 40px;
-    margin-bottom: 24px;
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 40%, var(--navy-600) 100%);
+    border-radius: var(--radius-xl);
+    padding: 36px 44px 32px;
+    margin-bottom: 28px;
     color: white;
     position: relative;
     overflow: hidden;
 }
+.header-container::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -60px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+}
 .header-container::after {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    bottom: -40px;
+    left: 40%;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(26,95,168,0.10) 0%, transparent 70%);
     border-radius: 50%;
 }
+.header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
 .header-title {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
-    margin: 0 0 6px 0;
-    letter-spacing: -0.5px;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
 }
 .header-subtitle {
-    font-size: 15px;
-    opacity: 0.85;
+    font-size: 14px;
+    opacity: 0.72;
     margin: 0;
     font-weight: 400;
+    line-height: 1.5;
+    max-width: 520px;
 }
 .header-badges {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     margin-top: 14px;
+    flex-wrap: wrap;
 }
 .header-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(4px);
-    padding: 5px 12px;
+    gap: 5px;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+    padding: 4px 14px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
+    letter-spacing: 0.01em;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 /* ===== Tabs ===== */
-.tabs {
-    border: none !important;
-}
+.tabs { border: none !important; }
 .tab-nav {
-    background: var(--bg-card) !important;
-    border-radius: var(--radius) !important;
-    padding: 6px !important;
-    box-shadow: var(--shadow);
-    margin-bottom: 20px !important;
-    gap: 2px !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    padding: 0 4px !important;
+    box-shadow: none !important;
+    margin-bottom: 24px !important;
+    gap: 4px !important;
 }
 .tab-nav button {
-    border-radius: 10px !important;
+    border-radius: 8px 8px 0 0 !important;
     padding: 10px 20px !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     font-weight: 500 !important;
     border: none !important;
     color: var(--text-secondary) !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.15s ease !important;
     background: transparent !important;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -1px !important;
 }
 .tab-nav button:hover {
-    background: #f1f5f9 !important;
     color: var(--text) !important;
+    background: var(--bg-alt) !important;
 }
 .tab-nav button.selected {
-    background: var(--primary) !important;
+    background: transparent !important;
+    color: var(--navy-800) !important;
+    border-bottom: 2px solid var(--navy-800) !important;
+    box-shadow: none !important;
+}
+
+/* ===== Agent Chat ===== */
+.chat-input-wrapper {
+    position: relative;
+}
+.agent-input { margin-bottom: 12px; }
+.agent-input textarea, .agent-input input {
+    border-radius: var(--radius) !important;
+    border: 1.5px solid var(--border) !important;
+    padding: 14px 16px !important;
+    font-size: 14.5px !important;
+    line-height: 1.6 !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    resize: none !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+.agent-input textarea:focus, .agent-input input:focus {
+    border-color: var(--navy-800) !important;
+    box-shadow: 0 0 0 3px rgba(15,23,42,0.06) !important;
+    outline: none !important;
+}
+
+/* Example chips */
+.example-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+.example-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+.example-chip {
+    border-radius: 20px !important;
+    padding: 5px 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+    min-width: unset !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+}
+.example-chip:hover {
+    border-color: var(--teal-400) !important;
+    color: var(--teal-500) !important;
+    background: var(--teal-50) !important;
+}
+
+/* Primary button */
+.btn-primary {
+    background: var(--navy-900) !important;
     color: white !important;
-    box-shadow: 0 2px 8px rgba(26,86,219,0.25);
+    border: none !important;
+    border-radius: var(--radius) !important;
+    padding: 10px 28px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    letter-spacing: 0.01em;
+}
+.btn-primary:hover {
+    background: var(--navy-700) !important;
+    box-shadow: var(--shadow-md);
+}
+
+/* ===== Thinking Steps ===== */
+.thinking-steps {
+    background: linear-gradient(135deg, #fafeff, #f0fdfa);
+    border: 1px solid #ccfbf1;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+}
+.thinking-step {
+    padding: 3px 0;
+    color: #115e59;
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 /* ===== Cards ===== */
 .card {
-    background: var(--bg-card);
-    border-radius: var(--radius);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
     padding: 24px;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-xs);
     border: 1px solid var(--border);
     margin-bottom: 16px;
     transition: box-shadow 0.2s ease;
 }
-.card:hover {
-    box-shadow: var(--shadow-lg);
-}
-
-/* ===== Chat ===== */
-.chat-container {
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    background: white;
-}
-.chat-message {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-}
-.chat-message.user {
-    background: #f0f9ff;
-}
-.chat-message.assistant {
-    background: white;
-}
-
-/* ===== Agent Thinking ===== */
-.thinking-steps {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin: 8px 0;
-    font-size: 13px;
-}
-.thinking-step {
-    padding: 4px 0;
-    color: #92400e;
-}
-
-/* ===== Inputs ===== */
-.agent-input textarea {
-    border-radius: 10px !important;
-    border: 2px solid var(--border) !important;
-    padding: 12px 16px !important;
-    font-size: 15px !important;
-    transition: border-color 0.2s ease !important;
-    resize: none !important;
-}
-.agent-input textarea:focus {
-    border-color: var(--primary-light) !important;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
-}
-
-/* ===== Buttons ===== */
-.btn-primary {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 10px 24px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-}
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26,86,219,0.3);
-}
-
-/* ===== Example Chips ===== */
-.example-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 12px 0;
-}
-
-/* ===== Stats Grid ===== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin: 16px 0;
-}
+.card:hover { box-shadow: var(--shadow-sm); }
 
 /* ===== Report Content ===== */
-.report h2 { font-size: 22px; margin-top: 24px; color: var(--primary-dark); }
-.report h3 { font-size: 17px; margin-top: 18px; color: var(--text); }
-.report table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
-.report th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
-.report td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.report tr:hover td { background: #f8fafc; }
+.report { color: var(--text); font-size: 14.5px; line-height: 1.7; }
+.report h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    color: var(--navy-900);
+    letter-spacing: -0.3px;
+}
+.report h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+.report table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 13.5px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.report th {
+    background: var(--bg-alt);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+}
+.report td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text);
+}
+.report tr:last-child td { border-bottom: none; }
+.report tr:hover td { background: #fafcff; }
 
 /* ===== Status Badge ===== */
 .badge {
     display: inline-block;
     padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.02em;
 }
 .badge-approved { background: #dcfce7; color: #166534; }
 .badge-phase3  { background: #dbeafe; color: #1e40af; }
@@ -478,31 +570,27 @@ CUSTOM_CSS = """
 /* ===== Footer ===== */
 .footer {
     text-align: center;
-    padding: 32px 16px;
-    color: var(--text-secondary);
-    font-size: 13px;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
+    padding: 28px 16px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    border-top: 1px solid var(--border-light);
+    margin-top: 48px;
+    letter-spacing: 0.02em;
 }
-
-/* ===== Loading ===== */
-.loading-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+.footer strong { color: var(--text-secondary); font-weight: 600; }
 
 /* ===== Animations ===== */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
-.fade-in { animation: fadeIn 0.4s ease-out; }
+.fade-in { animation: fadeIn 0.35s ease-out; }
 
-/* Misc overrides */
+/* Misc */
 footer { display: none !important; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 """
 
 # =============================================================================
@@ -1155,12 +1243,18 @@ def create_header():
     """Create the app header block."""
     return gr.HTML("""
     <div class="header-container">
-        <h1 class="header-title">🧬 PatSnap Pharma Intelligence</h1>
-        <p class="header-subtitle">AI-powered drug discovery intelligence — explore targets, drugs, diseases, companies, and clinical trials.</p>
+        <div class="header-row">
+            <div>
+                <h1 class="header-title">PatSnap Pharma Intelligence</h1>
+                <p class="header-subtitle">
+                    AI-powered drug discovery intelligence. Explore targets, pipelines, diseases, companies, and clinical trials — all in one place.
+                </p>
+            </div>
+        </div>
         <div class="header-badges">
-            <span class="header-badge">🔬 Multi-Module Agent</span>
-            <span class="header-badge">📊 Live MCP Data</span>
-            <span class="header-badge">🤖 AI-Powered Reports</span>
+            <span class="header-badge">Multi-Module Agent</span>
+            <span class="header-badge">MCP Live Data</span>
+            <span class="header-badge">Structured Reports</span>
         </div>
     </div>
     """)
@@ -1195,62 +1289,55 @@ def build_app():
         with gr.Tabs(elem_classes="tabs"):
 
             # ========== TAB 1: AGENT CHAT (Overview) ==========
-            with gr.TabItem("🤖 Agent Chat", id="chat"):
-                gr.Markdown(
-                    "### 💬 Ask anything about drug targets, diseases, or pharma companies.\n"
-                    "The AI agent will understand your intent, search relevant data, and generate a structured report.",
-                    elem_classes="fade-in"
-                )
+            with gr.TabItem("🤖 Agent", id="chat"):
+                # Input area
+                with gr.Group(elem_classes="card"):
+                    chat_input = gr.Textbox(
+                        label="Ask anything about drug discovery",
+                        placeholder="e.g. Analyze EGFR's competitive landscape and pipeline drugs...",
+                        lines=2,
+                        elem_classes="agent-input",
+                        show_label=True,
+                    )
+                    with gr.Row():
+                        chat_btn = gr.Button("Analyze", variant="primary", elem_classes="btn-primary")
+                        clear_btn = gr.Button("Clear", variant="secondary", size="sm")
 
-                with gr.Row(elem_classes="card"):
-                    # Chat layout
-                    with gr.Column(scale=3):
-                        chat_input = gr.Textbox(
-                            label="Your question",
-                            placeholder="e.g. \"Analyze EGFR as a drug target\" or \"What drugs target PD-L1?\" or \"Compare Roche and AstraZeneca oncology pipelines\"",
-                            lines=2,
-                            elem_classes="agent-input",
-                        )
-                        with gr.Row():
-                            chat_btn = gr.Button("🔍 Analyze", variant="primary", elem_classes="btn-primary")
-                            clear_btn = gr.Button("🗑️ Clear", variant="secondary", size="sm")
+                # Example chips
+                example_btns = []
+                examples = [
+                    ("🎯 EGFR pipeline", "Analyze EGFR as a drug target — approved drugs, pipeline, and competitive landscape"),
+                    ("💊 PD-1 drugs", "What drugs target PD-1? Show me approved and pipeline drugs"),
+                    ("🏥 NSCLC overview", "Give me a disease overview for non-small cell lung cancer"),
+                    ("🏢 Roche profile", "Profile Roche's oncology pipeline and recent deals"),
+                    ("🧪 ALK trials", "What clinical trials are targeting ALK in NSCLC?"),
+                    ("🔥 HER2 ADC", "Show me HER2-targeting antibody-drug conjugates"),
+                ]
+                with gr.Row():
+                    for label, prompt in examples:
+                        btn = gr.Button(label, elem_classes="example-chip", size="sm")
+                        example_btns.append((btn, prompt))
 
-                    with gr.Column(scale=1):
-                        gr.Markdown("#### ⚡ Quick Examples")
-                        example_btns = []
-                        examples = [
-                            ("🎯 EGFR", "Analyze EGFR as a drug target — approved drugs, pipeline, and competitive landscape"),
-                            ("💊 PD-1 drugs", "What drugs target PD-1? Show me approved and pipeline drugs"),
-                            ("🏥 NSCLC", "Give me a disease overview for non-small cell lung cancer"),
-                            ("🏢 Roche", "Profile Roche's oncology pipeline and recent deals"),
-                            ("🧪 ALK trials", "What clinical trials are targeting ALK in NSCLC?"),
-                            ("🔥 HER2 ADC", "Show me HER2-targeting antibody-drug conjugates"),
-                        ]
-                        with gr.Row():
-                            for i, (label, prompt) in enumerate(examples[:3]):
-                                btn = gr.Button(label, size="sm", scale=1)
-                                example_btns.append((btn, prompt))
-                        with gr.Row():
-                            for i, (label, prompt) in enumerate(examples[3:]):
-                                btn = gr.Button(label, size="sm", scale=1)
-                                example_btns.append((btn, prompt))
-
-                # Agent thinking (collapsible)
+                # Agent thinking
                 thinking_display = gr.HTML(
-                    value="<div class='thinking-steps'><div class='thinking-step'>🤖 Agent ready. Ask a question to begin.</div></div>",
+                    value="<div class='thinking-steps'><div class='thinking-step'>Agent ready. Ask a question to begin.</div></div>",
                     visible=True,
                 )
 
                 # Report output
                 report_display = gr.Markdown(
-                    value="### 👋 Welcome to PatSnap Pharma Intelligence\n\n"
-                          "I'm your AI agent for drug discovery intelligence. I can help with:\n\n"
-                          "- 🎯 **Target Intelligence** — Deep analysis of drug targets\n"
-                          "- 💊 **Drug Exploration** — Pipeline drugs by target, disease, or company\n"
-                          "- 🏥 **Disease Investigation** — Disease landscape & treatment overview\n"
-                          "- 🏢 **Company Profiling** — Pharma pipeline & strategic analysis\n"
-                          "- 🧪 **Clinical Trials** — Trial landscape by indication\n\n"
-                          "*Click a quick example above or type your question below.*",
+                    value="## Welcome\n\n"
+                          "I analyze drug targets, pipelines, diseases, companies, and clinical trials. "
+                          "Just describe what you're looking for — the agent will understand your intent, "
+                          "search relevant data sources, and generate a structured report.\n\n"
+                          "| Module | What it does |\n"
+                          "|--------|-------------|\n"
+                          "| 🎯 **Target Intelligence** | Deep analysis of drug targets |\n"
+                          "| 💊 **Drug Exploration** | Pipeline drugs by target, disease, or company |\n"
+                          "| 🏥 **Disease Investigation** | Disease landscape & treatment overview |\n"
+                          "| 🏢 **Company Profiling** | Pharma pipeline & strategic analysis |\n"
+                          "| 🧪 **Clinical Trials** | Trial landscape by indication |\n\n"
+                          "*Try a quick example above, or type your own question.*",
                     elem_classes="report",
                 )
 
@@ -1277,7 +1364,7 @@ def build_app():
                     )
 
                 clear_btn.click(
-                    fn=lambda: ("", "", "### 👋 Welcome to PatSnap Pharma Intelligence\n\n*Ready for your next query.*"),
+                    fn=lambda: ("", "", "## Welcome\n\n*Ready for your next query.*"),
                     outputs=[chat_input, thinking_display, report_display],
                 )
 
