@@ -291,7 +291,8 @@ CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .gradio-container {
-    max-width: 1120px !important;
+    max-width: 100% !important;
+    padding: 0 32px !important;
     margin: 0 auto !important;
     font-family: var(--font) !important;
     background: var(--bg) !important;
@@ -299,16 +300,33 @@ CUSTOM_CSS = """
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Force all text to be dark and readable — override Gradio defaults */
+.gradio-container .prose,
+.gradio-container .markdown,
+.gradio-container p,
+.gradio-container h1, .gradio-container h2, .gradio-container h3, .gradio-container h4,
+.gradio-container li, .gradio-container td, .gradio-container th,
+.gradio-container label, .gradio-container .label-text {
+    color: var(--text) !important;
+}
+.gradio-container .prose h2,
+.gradio-container .markdown h2 { color: var(--navy-950) !important; font-weight: 700 !important; }
+.gradio-container .prose h3,
+.gradio-container .markdown h3 { color: var(--text) !important; font-weight: 600 !important; }
+
+/* Fix table cell colors */
+.gradio-container td { color: var(--text) !important; }
+.gradio-container th { color: var(--text-secondary) !important; }
+
 /* ===== Header ===== */
 .header-container {
     background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 30%, var(--navy-700) 70%, var(--navy-600) 100%);
-    border-radius: var(--radius-xl);
     padding: 40px 48px 34px;
     margin-bottom: 28px;
     color: white;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .header-container::before {
     content: '';
