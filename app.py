@@ -258,14 +258,16 @@ MOCK_DRUG_SEARCH = {
 CUSTOM_CSS = """
 /* ===== Design Tokens ===== */
 :root {
+    --navy-950: #020617;
     --navy-900: #0a1628;
-    --navy-800: #122036;
+    --navy-800: #122540;
     --navy-700: #1a3050;
     --navy-600: #1e3a5f;
-    --blue-500: #1a5fa8;
     --teal-500: #0891b2;
     --teal-400: #06b6d4;
     --teal-50: #ecfeff;
+    --emerald-500: #10b981;
+    --emerald-50: #ecfdf5;
     --surface: #ffffff;
     --bg: #f8fafc;
     --bg-alt: #f1f5f9;
@@ -281,7 +283,7 @@ CUSTOM_CSS = """
     --shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
     --shadow-sm: 0 1px 3px rgba(15,23,42,0.06);
     --shadow: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
-    --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -1px rgba(15,23,42,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.04);
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
     --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
 }
@@ -294,37 +296,41 @@ CUSTOM_CSS = """
     font-family: var(--font) !important;
     background: var(--bg) !important;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* ===== Header ===== */
 .header-container {
-    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 40%, var(--navy-600) 100%);
+    background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 30%, var(--navy-700) 70%, var(--navy-600) 100%);
     border-radius: var(--radius-xl);
-    padding: 36px 44px 32px;
+    padding: 40px 48px 34px;
     margin-bottom: 28px;
     color: white;
     position: relative;
     overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
 }
 .header-container::before {
     content: '';
     position: absolute;
-    top: -80px;
-    right: -60px;
-    width: 360px;
-    height: 360px;
-    background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+    top: -120px;
+    right: -80px;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(6,182,212,0.13) 0%, rgba(6,182,212,0.04) 40%, transparent 70%);
     border-radius: 50%;
+    pointer-events: none;
 }
 .header-container::after {
     content: '';
     position: absolute;
-    bottom: -40px;
-    left: 40%;
-    width: 240px;
-    height: 240px;
-    background: radial-gradient(circle, rgba(26,95,168,0.10) 0%, transparent 70%);
+    bottom: -60px;
+    left: 30%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
     border-radius: 50%;
+    pointer-events: none;
 }
 .header-row {
     display: flex;
@@ -336,36 +342,40 @@ CUSTOM_CSS = """
 .header-title {
     font-size: 26px;
     font-weight: 700;
-    margin: 0 0 8px 0;
+    margin: 0 0 10px 0;
     letter-spacing: -0.4px;
     line-height: 1.2;
+    color: #ffffff;
 }
 .header-subtitle {
     font-size: 14px;
-    opacity: 0.72;
+    opacity: 0.68;
     margin: 0;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.6;
     max-width: 520px;
+    color: rgba(255,255,255,0.85);
 }
 .header-badges {
     display: flex;
     gap: 8px;
-    margin-top: 14px;
+    margin-top: 16px;
     flex-wrap: wrap;
 }
 .header-badge {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(8px);
-    padding: 4px 14px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 5px 16px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 500;
-    letter-spacing: 0.01em;
-    border: 1px solid rgba(255,255,255,0.08);
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.8);
 }
 
 /* ===== Tabs ===== */
@@ -386,10 +396,11 @@ CUSTOM_CSS = """
     font-weight: 500 !important;
     border: none !important;
     color: var(--text-secondary) !important;
-    transition: all 0.15s ease !important;
+    transition: color 0.15s ease, background 0.15s ease !important;
     background: transparent !important;
     border-bottom: 2px solid transparent !important;
     margin-bottom: -1px !important;
+    cursor: pointer !important;
 }
 .tab-nav button:hover {
     color: var(--text) !important;
@@ -397,16 +408,18 @@ CUSTOM_CSS = """
 }
 .tab-nav button.selected {
     background: transparent !important;
-    color: var(--navy-800) !important;
-    border-bottom: 2px solid var(--navy-800) !important;
+    color: var(--navy-900) !important;
+    border-bottom: 2px solid var(--navy-900) !important;
     box-shadow: none !important;
+    font-weight: 600 !important;
+}
+.tab-nav button:focus-visible {
+    outline: 2px solid var(--navy-600) !important;
+    outline-offset: -2px !important;
+    border-radius: 8px 8px 0 0 !important;
 }
 
-/* ===== Agent Chat ===== */
-.chat-input-wrapper {
-    position: relative;
-}
-.agent-input { margin-bottom: 12px; }
+/* ===== Input ===== */
 .agent-input textarea, .agent-input input {
     border-radius: var(--radius) !important;
     border: 1.5px solid var(--border) !important;
@@ -420,30 +433,14 @@ CUSTOM_CSS = """
 }
 .agent-input textarea:focus, .agent-input input:focus {
     border-color: var(--navy-800) !important;
-    box-shadow: 0 0 0 3px rgba(15,23,42,0.06) !important;
+    box-shadow: 0 0 0 3px rgba(18,37,64,0.08) !important;
     outline: none !important;
 }
 
 /* Example chips */
-.example-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-    align-items: center;
-}
-.example-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-right: 4px;
-    white-space: nowrap;
-}
 .example-chip {
     border-radius: 20px !important;
-    padding: 5px 14px !important;
+    padding: 6px 16px !important;
     font-size: 12.5px !important;
     font-weight: 500 !important;
     border: 1px solid var(--border) !important;
@@ -454,40 +451,47 @@ CUSTOM_CSS = """
     white-space: nowrap !important;
     min-width: unset !important;
     height: auto !important;
-    line-height: 1.5 !important;
+    line-height: 1.4 !important;
 }
 .example-chip:hover {
     border-color: var(--teal-400) !important;
     color: var(--teal-500) !important;
     background: var(--teal-50) !important;
 }
+.example-chip:focus-visible {
+    outline: 2px solid var(--teal-400) !important;
+    outline-offset: 1px !important;
+}
 
 /* Primary button */
 .btn-primary {
-    background: var(--navy-900) !important;
+    background: var(--navy-950) !important;
     color: white !important;
     border: none !important;
     border-radius: var(--radius) !important;
-    padding: 10px 28px !important;
+    padding: 11px 32px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
-    transition: all 0.15s ease !important;
+    transition: background 0.15s ease, box-shadow 0.15s ease !important;
     letter-spacing: 0.01em;
 }
 .btn-primary:hover {
-    background: var(--navy-700) !important;
+    background: var(--navy-800) !important;
     box-shadow: var(--shadow-md);
+}
+.btn-primary:focus-visible {
+    outline: 2px solid var(--navy-600) !important;
+    outline-offset: 2px !important;
 }
 
 /* ===== Thinking Steps ===== */
 .thinking-steps {
-    background: linear-gradient(135deg, #fafeff, #f0fdfa);
+    background: linear-gradient(135deg, #f8faff, #f0fdfa);
     border: 1px solid #ccfbf1;
     border-radius: var(--radius);
     padding: 14px 18px;
     margin: 16px 0;
-    font-size: 13px;
 }
 .thinking-step {
     padding: 3px 0;
@@ -509,13 +513,13 @@ CUSTOM_CSS = """
 .card:hover { box-shadow: var(--shadow-sm); }
 
 /* ===== Report Content ===== */
-.report { color: var(--text); font-size: 14.5px; line-height: 1.7; }
+.report { color: var(--text); font-size: 14.5px; line-height: 1.75; }
 .report h2 {
     font-size: 20px;
     font-weight: 700;
     margin-top: 28px;
     margin-bottom: 12px;
-    color: var(--navy-900);
+    color: var(--navy-950);
     letter-spacing: -0.3px;
 }
 .report h3 {
@@ -539,10 +543,10 @@ CUSTOM_CSS = """
     padding: 10px 14px;
     text-align: left;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border);
 }
 .report td {
@@ -585,6 +589,15 @@ CUSTOM_CSS = """
     to { opacity: 1; transform: translateY(0); }
 }
 .fade-in { animation: fadeIn 0.35s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .fade-in { animation: none; }
+}
 
 /* Misc */
 footer { display: none !important; }
@@ -1289,7 +1302,7 @@ def build_app():
         with gr.Tabs(elem_classes="tabs"):
 
             # ========== TAB 1: AGENT CHAT (Overview) ==========
-            with gr.TabItem("🤖 Agent", id="chat"):
+            with gr.TabItem("Agent", id="chat"):
                 # Input area
                 with gr.Group(elem_classes="card"):
                     chat_input = gr.Textbox(
@@ -1306,12 +1319,12 @@ def build_app():
                 # Example chips
                 example_btns = []
                 examples = [
-                    ("🎯 EGFR pipeline", "Analyze EGFR as a drug target — approved drugs, pipeline, and competitive landscape"),
-                    ("💊 PD-1 drugs", "What drugs target PD-1? Show me approved and pipeline drugs"),
-                    ("🏥 NSCLC overview", "Give me a disease overview for non-small cell lung cancer"),
-                    ("🏢 Roche profile", "Profile Roche's oncology pipeline and recent deals"),
-                    ("🧪 ALK trials", "What clinical trials are targeting ALK in NSCLC?"),
-                    ("🔥 HER2 ADC", "Show me HER2-targeting antibody-drug conjugates"),
+                    ("EGFR Analysis", "Analyze EGFR as a drug target — approved drugs, pipeline, and competitive landscape"),
+                    ("PD-1 Drugs", "What drugs target PD-1? Show me approved and pipeline drugs"),
+                    ("NSCLC Overview", "Give me a disease overview for non-small cell lung cancer"),
+                    ("Roche Profile", "Profile Roche's oncology pipeline and recent deals"),
+                    ("ALK Trials", "What clinical trials are targeting ALK in NSCLC?"),
+                    ("HER2 ADC", "Show me HER2-targeting antibody-drug conjugates"),
                 ]
                 with gr.Row():
                     for label, prompt in examples:
