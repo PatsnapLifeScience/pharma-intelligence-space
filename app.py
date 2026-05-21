@@ -25,21 +25,21 @@ import gradio as gr
 
 API_KEY = os.getenv("PATSNAP_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")  # optional: enable LLM agent mode
-SERVER_URL = f"https://connect.patsnap.com/096456/logic-mcp?apiKey={API_KEY}"
+SERVER_URL = f"https://connect.patsnap.com/096456/logic-mcp?apikey={API_KEY}"
 
 # Module definitions
 MODULES = {
     "target":  {"icon": "🎯", "label": "Target Intelligence", "label_cn": "靶点全景",
-                "tool": "ls_target_search", "entity": "target",
+                "tool": "ls_drug_search", "entity": "target",
                 "desc": "Analyze any biomedical target — biology, drugs, pipeline, trials."},
     "drug":    {"icon": "💊", "label": "Drug Exploration", "label_cn": "药物管线",
                 "tool": "ls_drug_search", "entity": "drug",
                 "desc": "Search drugs by target, disease, mechanism, or company."},
     "disease": {"icon": "🏥", "label": "Disease Investigation", "label_cn": "疾病格局",
-                "tool": "ls_disease_search", "entity": "disease",
+                "tool": "ls_drug_search", "entity": "disease",
                 "desc": "Understand disease landscape — epidemiology, treatments, pipeline."},
     "company": {"icon": "🏢", "label": "Company Profiling", "label_cn": "公司分析",
-                "tool": "ls_company_search", "entity": "company",
+                "tool": "ls_organization_pipeline_fetch", "entity": "company",
                 "desc": "Profile pharma companies — pipeline, deals, therapeutic focus."},
     "trial":   {"icon": "🧪", "label": "Clinical Trials", "label_cn": "临床试验",
                 "tool": "ls_clinical_trial_search", "entity": "trial",
@@ -457,11 +457,14 @@ CUSTOM_CSS = """
     border-radius: 8px 8px 0 0 !important;
 }
 
-/* Ensure button text is readable */
-.gradio-container button {
+/* Ensure all text elements are readable */
+.gradio-container * {
+    color: inherit !important;
+}
+.gradio-container button:not(.btn-primary):not(.example-chip) {
     color: #475569 !important;
 }
-.gradio-container button:hover {
+.gradio-container button:not(.btn-primary):not(.example-chip):hover {
     color: #1e293b !important;
 }
 
@@ -1001,6 +1004,180 @@ def build_target_report(target_data: Dict) -> str:
     return "\n".join(report)
 
 
+def _normalize_drug_item(item: Dict) -> Dict:
+    """Normalize server response fields to internal schema."""
+    if "display_name_en" in item or "drug_type_view" in item:
+        drug_types = item.get("drug_type_view", [])
+        type_str = ", ".join(d.get("display_name_en", "") for d in drug_types if d.get("display_name_en")) or "N/A"
+
+        # Indications from research_disease_view (fetch) or indication_view (search)
+        indications = item.get("research_disease_view", []) or item.get("indication_view", [])
+        ind_list = [d.get("display_name_en", "") for d in indications if d.get("display_name_en")] or []
+
+        # Company from originator_org_master_entity_id_view (fetch) or originator_view (search)
+        orgs = item.get("originator_org_master_entity_id_view", []) or item.get("originator_view", []) or item.get("organization_view", [])
+        company = ", ".join(d.get("display_name_en", "") for d in orgs if d.get("display_name_en")) or "N/A"
+
+        # Phase from global_highest_dev_status_view (fetch) or highest_phase_view (search)
+        phase = item.get("global_highest_dev_status_view") or item.get("highest_phase_view", {})
+        phase_str = phase.get("display_name_en", "") if isinstance(phase, dict) else str(phase) if phase else "N/A"
+
+        return {
+            "name": item.get("display_name_en") or item.get("display_name_cn") or "N/A",
+            "type": type_str,
+            "highest_phase": phase_str,
+            "first_approved": item.get("first_approved_date", ""),
+            "indications": ind_list,
+            "company": company,
+        }
+    return item
+
+
+def _normalize_items(items: List[Dict]) -> List[Dict]:
+    """Normalize a list of server response items."""
+    return [_normalize_drug_item(i) for i in items]
+
+
+# =============================================================================
+# ENTITY EXTRACTORS — Shape live MCP data into report-friendly dicts
+# =============================================================================
+
+def _profile_text(item: Dict) -> str:
+    """Extract a profile description string from profile/profile_v2 fields."""
+    for key in ("profile_v2", "profile"):
+        val = item.get(key)
+        if isinstance(val, list) and val:
+            content = val[0].get("content", "")
+            if content:
+                return content
+    return ""
+
+
+def _aliases(item: Dict, max_n: int = 6) -> List[str]:
+    """Extract English aliases from a target/disease item."""
+    aliases = item.get("alias", []) or []
+    out, seen = [], set()
+    for a in aliases:
+        if isinstance(a, dict) and a.get("lang") == "EN":
+            n = a.get("name", "").strip()
+            if n and n not in seen:
+                seen.add(n)
+                out.append(n)
+                if len(out) >= max_n:
+                    break
+    return out
+
+
+def extract_target(item: Dict) -> Dict:
+    """Extract structured target info from ls_target_fetch result."""
+    return {
+        "name": item.get("display_name_en") or item.get("display_name_cn", "N/A"),
+        "aliases": _aliases(item),
+        "profile": _profile_text(item),
+        "drug_count": item.get("drug_count_roll_up") or item.get("drug_count", 0),
+        "dev_drug_count": item.get("dev_drug_count_roll_up") or item.get("dev_drug_count", 0),
+        "disease_count": item.get("disease_count_roll_up") or item.get("disease_count", 0),
+        "uniprot_id": (item.get("uniprot_id") or [None])[0],
+        "hgnc_id": (item.get("hgnc_id") or [None])[0],
+        "chembl_id": (item.get("chembl_id") or [None])[0],
+        "organism": item.get("organisms") or item.get("source", ""),
+    }
+
+
+def extract_disease(item: Dict) -> Dict:
+    """Extract structured disease info from ls_disease_fetch result."""
+    return {
+        "name": item.get("display_name_en") or item.get("display_name_cn", "N/A"),
+        "aliases": _aliases(item),
+        "profile": _profile_text(item),
+        "dev_drug_count": item.get("dev_drug_count_roll_up") or item.get("dev_drug_count", 0),
+        "mesh_id": item.get("mesh_id"),
+        "umls_cui": (item.get("umls_cui") or [None])[0],
+    }
+
+
+def extract_organization(item: Dict) -> Dict:
+    """Extract structured org info from ls_organization_fetch result."""
+    country = item.get("country_id_view") or {}
+    fdate = item.get("founded_date")
+    founded_year = None
+    if fdate and isinstance(fdate, int):
+        s = str(fdate)
+        if len(s) >= 4:
+            founded_year = s[:4]
+    return {
+        "name": item.get("display_name_en") or item.get("name_en", "N/A"),
+        "description": item.get("short_description_en") or (item.get("long_description_en", "") or "")[:400],
+        "website": item.get("website", ""),
+        "country": country.get("display_name_en", "") if isinstance(country, dict) else "",
+        "founded": founded_year,
+        "employees": item.get("employee_number"),
+        "stock_exchange": item.get("stock_exchange_code", ""),
+        "stock_symbol": item.get("stock_symbol", ""),
+        "ownership": ", ".join(item.get("ownership_type", []) or []),
+        "drug_count": item.get("drug_count_roll_up") or item.get("drug_count", 0),
+        "dev_drug_count": item.get("dev_drug_count_roll_up") or item.get("dev_drug_count", 0),
+        "patent_count": item.get("patent_phs_count_roll_up") or item.get("patent_phs_count", 0),
+    }
+
+
+def extract_pipeline_drug(item: Dict) -> Dict:
+    """Extract a drug record from ls_organization_pipeline_fetch."""
+    targets = item.get("targets", []) or []
+    target_str = ", ".join(t.get("display_name_en", "") for t in targets if t.get("display_name_en")) or "—"
+    statuses = item.get("status_tables", []) or []
+    indications = []
+    phases_seen = set()
+    best_phase = ""
+    for s in statuses:
+        d = s.get("disease_id_view", {}) or {}
+        name = d.get("display_name_en", "")
+        if name and name not in indications:
+            indications.append(name)
+        ds = s.get("dev_status")
+        if isinstance(ds, list):
+            for entry in ds:
+                view = entry.get("dev_status_id_view", {}) or {}
+                ph = view.get("display_name_en", "")
+                if ph and ph not in phases_seen:
+                    phases_seen.add(ph)
+                    if not best_phase:
+                        best_phase = ph
+        elif isinstance(ds, dict):
+            ph = ds.get("display_name_en", "")
+            if ph and ph not in phases_seen:
+                phases_seen.add(ph)
+                if not best_phase:
+                    best_phase = ph
+    return {
+        "name": item.get("display_name_en") or item.get("display_name_cn", "N/A"),
+        "targets": target_str,
+        "indications": indications[:3],
+        "phase": best_phase or "—",
+    }
+
+
+def extract_trial(item: Dict) -> Dict:
+    """Extract structured trial info from ls_clinical_trial_fetch result."""
+    phase = item.get("clinical_phase") or {}
+    phase_str = phase.get("display_name_en", "") if isinstance(phase, dict) else str(phase)
+    sponsors = item.get("sponsor_organization", []) or []
+    sponsor_str = ", ".join(s.get("display_name_en", "") for s in sponsors if s.get("display_name_en"))
+    diseases = item.get("disease", []) or []
+    disease_str = ", ".join(d.get("display_name_en", "") for d in diseases if d.get("display_name_en"))
+    drugs = item.get("experiment_drug", []) or []
+    drug_str = ", ".join(d.get("display_name_en", "") for d in drugs if d.get("display_name_en"))
+    return {
+        "nct": item.get("registration_number", ""),
+        "title": item.get("trial_title", ""),
+        "status": item.get("trial_status", ""),
+        "phase": phase_str,
+        "sponsor": sponsor_str,
+        "disease": disease_str,
+        "drugs": drug_str,
+    }
+
+
 def build_drug_report(items: List[Dict], query_summary: str, total: int = 0) -> str:
     """Build a drug pipeline report from search results."""
     if not items:
@@ -1203,52 +1380,364 @@ def build_agent_thinking(intent: Dict, mcp_available: bool, mcp_result: Optional
 # CORE AGENT EXECUTION
 # =============================================================================
 
+async def _mcp_call(session, tool_name: str, args: dict) -> Optional[dict]:
+    """Call an MCP tool and return parsed JSON, or None on failure."""
+    try:
+        result = await session.call_tool(tool_name, arguments=args)
+        if result.content:
+            text = result.content[0].text
+            return json.loads(text) if isinstance(text, str) else text
+    except Exception as e:
+        print(f"[MCP] {tool_name} error: {e}")
+    return None
+
+
+async def _pipeline_target(session, entities: Dict) -> Tuple[str, str]:
+    """Target module: fetch target profile + top drugs."""
+    target_names = entities["targets"][:3]
+    steps = [f"🎯 Fetching target details: {', '.join(target_names)}"]
+
+    # 1. Target profile
+    target_data = await _mcp_call(session, "ls_target_fetch", {"target": target_names})
+    target_info = None
+    if target_data and target_data.get("result"):
+        target_info = extract_target(target_data["result"][0])
+        steps.append(f"✅ Target profile loaded ({target_info['drug_count']} total drugs)")
+
+    # 2. Top drugs for this target
+    drug_data = await _mcp_call(session, "ls_drug_search", {"target": target_names, "limit": 10})
+    drugs = []
+    if drug_data and drug_data.get("items"):
+        drug_ids = [it["drug_id"] for it in drug_data["items"] if it.get("drug_id")]
+        if drug_ids:
+            fetch_data = await _mcp_call(session, "ls_drug_fetch", {"drug_ids": drug_ids})
+            if fetch_data and fetch_data.get("items"):
+                drugs = _normalize_items(fetch_data["items"])
+                steps.append(f"✅ Enriched {len(drugs)} drugs with full details")
+            else:
+                drugs = _normalize_items(drug_data["items"])
+        total = drug_data.get("total", len(drugs))
+        steps.append(f"📊 {total} drugs targeting {', '.join(target_names)}")
+
+    # Build report
+    report = _build_live_target_report(target_info, drugs, drug_data.get("total", 0) if drug_data else 0)
+    return "\n".join(f"<div class='thinking-step'>{s}</div>" for s in steps), report
+
+
+async def _pipeline_drug(session, intent: Dict) -> Tuple[str, str]:
+    """Drug module: search + enrich."""
+    args = intent["mcp_args"]
+    steps = [f"💊 Searching drugs with: {json.dumps({k:v for k,v in args.items() if k != 'limit'})}"]
+
+    drug_data = await _mcp_call(session, "ls_drug_search", args)
+    drugs = []
+    total = 0
+    if drug_data and drug_data.get("items"):
+        total = drug_data.get("total", 0)
+        drug_ids = [it["drug_id"] for it in drug_data["items"] if it.get("drug_id")]
+        if drug_ids:
+            fetch_data = await _mcp_call(session, "ls_drug_fetch", {"drug_ids": drug_ids})
+            if fetch_data and fetch_data.get("items"):
+                drugs = _normalize_items(fetch_data["items"])
+                steps.append(f"✅ Enriched {len(drugs)} of {total} total results")
+            else:
+                drugs = _normalize_items(drug_data["items"])
+                steps.append(f"✅ Retrieved {len(drugs)} of {total} results (basic)")
+
+    entity_name = (intent["entities"]["targets"] or intent["entities"]["diseases"] or ["query"])[0]
+    report = build_drug_report(drugs, f"Drug Pipeline — {entity_name}", total)
+    return "\n".join(f"<div class='thinking-step'>{s}</div>" for s in steps), report
+
+
+async def _pipeline_disease(session, entities: Dict) -> Tuple[str, str]:
+    """Disease module: fetch disease profile + top drugs."""
+    disease_names = entities["diseases"][:3]
+    steps = [f"🏥 Fetching disease details: {', '.join(disease_names)}"]
+
+    # 1. Disease profile
+    disease_data = await _mcp_call(session, "ls_disease_fetch", {"disease": disease_names})
+    disease_info = None
+    if disease_data and disease_data.get("result"):
+        disease_info = extract_disease(disease_data["result"][0])
+        steps.append(f"✅ Disease profile loaded ({disease_info['dev_drug_count']} drugs in development)")
+
+    # 2. Top drugs for this disease
+    drug_data = await _mcp_call(session, "ls_drug_search", {"disease": disease_names, "limit": 10})
+    drugs = []
+    if drug_data and drug_data.get("items"):
+        drug_ids = [it["drug_id"] for it in drug_data["items"] if it.get("drug_id")]
+        if drug_ids:
+            fetch_data = await _mcp_call(session, "ls_drug_fetch", {"drug_ids": drug_ids})
+            if fetch_data and fetch_data.get("items"):
+                drugs = _normalize_items(fetch_data["items"])
+                steps.append(f"✅ Enriched {len(drugs)} drugs with full details")
+            else:
+                drugs = _normalize_items(drug_data["items"])
+        total = drug_data.get("total", len(drugs))
+        steps.append(f"📊 {total} drugs for {', '.join(disease_names)}")
+
+    report = _build_live_disease_report(disease_info, drugs, drug_data.get("total", 0) if drug_data else 0)
+    return "\n".join(f"<div class='thinking-step'>{s}</div>" for s in steps), report
+
+
+async def _pipeline_company(session, entities: Dict) -> Tuple[str, str]:
+    """Company module: fetch org profile + pipeline."""
+    company_names = entities["companies"][:3]
+    steps = [f"🏢 Fetching company details: {', '.join(company_names)}"]
+
+    # 1. Organization profile
+    org_data = await _mcp_call(session, "ls_organization_fetch", {"organization": company_names})
+    org_info = None
+    if org_data and org_data.get("result"):
+        org_info = extract_organization(org_data["result"][0])
+        steps.append(f"✅ Company profile loaded ({org_info['drug_count']} total drugs)")
+
+    # 2. Pipeline
+    pipeline_data = await _mcp_call(session, "ls_organization_pipeline_fetch",
+                                     {"organization": company_names[0], "limit": 15})
+    pipeline = []
+    if pipeline_data and pipeline_data.get("items"):
+        pipeline = [extract_pipeline_drug(it) for it in pipeline_data["items"]]
+        steps.append(f"✅ Pipeline: {len(pipeline)} drugs loaded (total: {pipeline_data.get('total', '?')})")
+
+    report = _build_live_company_report(org_info, pipeline, pipeline_data.get("total", 0) if pipeline_data else 0)
+    return "\n".join(f"<div class='thinking-step'>{s}</div>" for s in steps), report
+
+
+async def _pipeline_trial(session, intent: Dict) -> Tuple[str, str]:
+    """Trial module: search + enrich."""
+    args = intent["mcp_args"]
+    steps = [f"🧪 Searching clinical trials: {json.dumps({k:v for k,v in args.items() if k != 'limit'})}"]
+
+    trial_data = await _mcp_call(session, "ls_clinical_trial_search", args)
+    trials = []
+    total = 0
+    if trial_data and trial_data.get("items"):
+        total = trial_data.get("total", 0)
+        trial_ids = [it["clinical_trial_id"] for it in trial_data["items"] if it.get("clinical_trial_id")]
+        if trial_ids:
+            fetch_data = await _mcp_call(session, "ls_clinical_trial_fetch", {"trial_ids": trial_ids})
+            if fetch_data and fetch_data.get("result"):
+                trials = [extract_trial(it) for it in fetch_data["result"]]
+                steps.append(f"✅ Enriched {len(trials)} of {total} total trials")
+            else:
+                trials = [{"title": it.get("trial_title", ""), "status": it.get("trial_status", ""),
+                           "phase": (it.get("clinical_phase") or {}).get("display_name_en", ""),
+                           "nct": "", "sponsor": "", "disease": "", "drugs": ""}
+                          for it in trial_data["items"]]
+                steps.append(f"✅ Retrieved {len(trials)} of {total} trials (basic)")
+
+    entity_name = (intent["entities"]["targets"] or intent["entities"]["diseases"] or ["query"])[0]
+    report = _build_live_trial_report(trials, entity_name, total)
+    return "\n".join(f"<div class='thinking-step'>{s}</div>" for s in steps), report
+
+
+# =============================================================================
+# LIVE REPORT BUILDERS
+# =============================================================================
+
+def _build_live_target_report(target_info: Optional[Dict], drugs: List[Dict], total_drugs: int) -> str:
+    """Build a target report from live MCP data."""
+    if not target_info:
+        if drugs:
+            return build_drug_report(drugs, "Target Drugs", total_drugs)
+        return "## No data found\n\n*Could not retrieve target information.*"
+
+    report = []
+    name = target_info["name"]
+    report.append(f"## 🎯 {name} — Target Intelligence")
+    report.append("")
+
+    # Overview
+    report.append("### Overview")
+    report.append(f"| Property | Value |")
+    report.append(f"|----------|-------|")
+    report.append(f"| **Organism** | {target_info['organism']} |")
+    report.append(f"| **Total Drugs** | {target_info['drug_count']} |")
+    report.append(f"| **In Development** | {target_info['dev_drug_count']} |")
+    report.append(f"| **Diseases** | {target_info['disease_count']} |")
+    if target_info.get("uniprot_id"):
+        report.append(f"| **UniProt** | {target_info['uniprot_id']} |")
+    if target_info.get("chembl_id"):
+        report.append(f"| **ChEMBL** | {target_info['chembl_id']} |")
+    report.append("")
+
+    # Aliases
+    if target_info.get("aliases"):
+        report.append(f"**Also known as:** {', '.join(target_info['aliases'][:5])}")
+        report.append("")
+
+    # Profile
+    if target_info.get("profile"):
+        report.append("### Biology")
+        profile = target_info["profile"]
+        if len(profile) > 600:
+            profile = profile[:600] + "..."
+        report.append(profile)
+        report.append("")
+
+    # Drug table
+    if drugs:
+        report.append(f"### Top Drugs ({total_drugs} total)")
+        report.append("| Drug | Type | Phase | Indications | Company |")
+        report.append("|------|------|-------|-------------|---------|")
+        for d in drugs[:10]:
+            inds = ", ".join(d.get("indications", [])[:2]) or "—"
+            report.append(f"| {d['name']} | {d['type']} | {d['highest_phase']} | {inds} | {d['company']} |")
+        report.append("")
+
+    report.append("---")
+    report.append("*Live data from PatSnap Pharma Intelligence*")
+    return "\n".join(report)
+
+
+def _build_live_disease_report(disease_info: Optional[Dict], drugs: List[Dict], total_drugs: int) -> str:
+    """Build a disease report from live MCP data."""
+    if not disease_info:
+        if drugs:
+            return build_drug_report(drugs, "Disease Drugs", total_drugs)
+        return "## No data found\n\n*Could not retrieve disease information.*"
+
+    report = []
+    name = disease_info["name"]
+    report.append(f"## 🏥 {name} — Disease Landscape")
+    report.append("")
+
+    # Overview
+    report.append("### Overview")
+    report.append(f"| Property | Value |")
+    report.append(f"|----------|-------|")
+    report.append(f"| **Drugs in Development** | {disease_info['dev_drug_count']} |")
+    if disease_info.get("mesh_id"):
+        report.append(f"| **MeSH ID** | {disease_info['mesh_id']} |")
+    if disease_info.get("umls_cui"):
+        report.append(f"| **UMLS CUI** | {disease_info['umls_cui']} |")
+    report.append("")
+
+    # Aliases
+    if disease_info.get("aliases"):
+        report.append(f"**Also known as:** {', '.join(disease_info['aliases'][:5])}")
+        report.append("")
+
+    # Profile
+    if disease_info.get("profile"):
+        report.append("### Description")
+        profile = disease_info["profile"]
+        if len(profile) > 600:
+            profile = profile[:600] + "..."
+        report.append(profile)
+        report.append("")
+
+    # Drug table
+    if drugs:
+        report.append(f"### Treatment Pipeline ({total_drugs} total drugs)")
+        report.append("| Drug | Type | Phase | Indications | Company |")
+        report.append("|------|------|-------|-------------|---------|")
+        for d in drugs[:10]:
+            inds = ", ".join(d.get("indications", [])[:2]) or "—"
+            report.append(f"| {d['name']} | {d['type']} | {d['highest_phase']} | {inds} | {d['company']} |")
+        report.append("")
+
+    report.append("---")
+    report.append("*Live data from PatSnap Pharma Intelligence*")
+    return "\n".join(report)
+
+
+def _build_live_company_report(org_info: Optional[Dict], pipeline: List[Dict], total_pipeline: int) -> str:
+    """Build a company report from live MCP data."""
+    if not org_info:
+        return "## No data found\n\n*Could not retrieve company information.*"
+
+    report = []
+    name = org_info["name"]
+    report.append(f"## 🏢 {name} — Company Profile")
+    report.append("")
+
+    # Overview
+    report.append("### Overview")
+    if org_info.get("description"):
+        report.append(org_info["description"])
+        report.append("")
+
+    report.append(f"| Property | Value |")
+    report.append(f"|----------|-------|")
+    if org_info.get("country"):
+        report.append(f"| **Headquarters** | {org_info['country']} |")
+    if org_info.get("founded"):
+        report.append(f"| **Founded** | {org_info['founded']} |")
+    if org_info.get("employees"):
+        report.append(f"| **Employees** | {org_info['employees']:,} |")
+    if org_info.get("ownership"):
+        report.append(f"| **Ownership** | {org_info['ownership']} |")
+    if org_info.get("stock_exchange") and org_info.get("stock_symbol"):
+        report.append(f"| **Stock** | {org_info['stock_exchange']}: {org_info['stock_symbol']} |")
+    if org_info.get("website"):
+        report.append(f"| **Website** | {org_info['website']} |")
+    report.append(f"| **Total Drugs** | {org_info['drug_count']} |")
+    report.append(f"| **In Development** | {org_info['dev_drug_count']} |")
+    if org_info.get("patent_count"):
+        report.append(f"| **Patents** | {org_info['patent_count']:,} |")
+    report.append("")
+
+    # Pipeline
+    if pipeline:
+        report.append(f"### Drug Pipeline ({total_pipeline} total)")
+        report.append("| Drug | Targets | Indications | Phase |")
+        report.append("|------|---------|-------------|-------|")
+        for d in pipeline[:15]:
+            inds = ", ".join(d["indications"][:2]) or "—"
+            report.append(f"| {d['name']} | {d['targets']} | {inds} | {d['phase']} |")
+        report.append("")
+
+    report.append("---")
+    report.append("*Live data from PatSnap Pharma Intelligence*")
+    return "\n".join(report)
+
+
+def _build_live_trial_report(trials: List[Dict], entity_name: str, total: int) -> str:
+    """Build a clinical trial report from live MCP data."""
+    report = []
+    report.append(f"## 🧪 Clinical Trials — {entity_name}")
+    report.append(f"*{len(trials)} shown of {total} total*")
+    report.append("")
+
+    if not trials:
+        report.append("*No clinical trials found for this query.*")
+        return "\n".join(report)
+
+    report.append("| NCT | Title | Phase | Status | Sponsor | Drugs |")
+    report.append("|-----|-------|-------|--------|---------|-------|")
+    for t in trials[:15]:
+        title = t["title"][:60] + "..." if len(t["title"]) > 60 else t["title"]
+        report.append(f"| {t['nct']} | {title} | {t['phase']} | {t['status']} | {t['sponsor'][:30]} | {t['drugs'][:40]} |")
+    report.append("")
+
+    report.append("---")
+    report.append("*Live data from PatSnap Pharma Intelligence*")
+    return "\n".join(report)
+
+
+# =============================================================================
+# RUN AGENT — Optimized per-module dispatch
+# =============================================================================
+
 async def run_agent(query: str, lang: str = "en") -> Tuple[str, str]:
     """
     Execute the full agent pipeline:
     1. Parse intent
-    2. Try MCP → fallback to knowledge base
-    3. Build report
+    2. Dispatch to module-specific pipeline
+    3. Fallback to knowledge base if MCP unavailable
 
     Returns (thinking_html, report_markdown)
     """
     if not query or not query.strip():
-        return "", "*👋 Welcome! Ask me anything about drug targets, diseases, companies, or clinical trials.*"
+        return "", "*Welcome! Ask me anything about drug targets, diseases, companies, or clinical trials.*"
 
     # Step 1: Parse intent
     intent = parse_intent(query)
     module = intent["module"]
-    mod_info = MODULES[module]
 
-    # Step 2: Try MCP
-    mcp_data = None
-    mcp_available = bool(API_KEY)
-    if mcp_available:
-        try:
-            from mcp import ClientSession
-            from mcp.client.streamable_http import streamablehttp_client
-            async with streamablehttp_client(SERVER_URL, timeout=25, sse_read_timeout=25) as (read, write, _):
-                async with ClientSession(read, write) as session:
-                    await session.initialize()
-                    tools = await session.list_tools()
-                    tool_names = [t.name for t in tools.tools]
-
-                    # Find matching tool
-                    tool_to_call = None
-                    for t in [mod_info["tool"], "ls_drug_search"]:  # fallback to drug search
-                        if t in tool_names:
-                            tool_to_call = t
-                            break
-
-                    if tool_to_call:
-                        result = await session.call_tool(tool_to_call, arguments=intent["mcp_args"])
-                        if result.content:
-                            text = result.content[0].text
-                            mcp_data = json.loads(text) if isinstance(text, str) else text
-        except Exception as e:
-            print(f"[Agent] MCP error: {e}")
-
-    # Step 3: Build thinking trace
+    # Determine entity name for display
     if module == "target" and intent["entities"]["targets"]:
         entity_name = intent["entities"]["targets"][0]
     elif module == "disease" and intent["entities"]["diseases"]:
@@ -1258,59 +1747,60 @@ async def run_agent(query: str, lang: str = "en") -> Tuple[str, str]:
     else:
         entity_name = query[:50]
 
-    thinking = build_agent_thinking(intent, mcp_available, mcp_data)
+    # Step 2: Try MCP with module-specific pipeline
+    mcp_available = bool(API_KEY)
+    if mcp_available:
+        try:
+            from mcp import ClientSession
+            from mcp.client.streamable_http import streamablehttp_client
+            async with streamablehttp_client(SERVER_URL, timeout=30, sse_read_timeout=30) as (read, write, _):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
 
-    # Step 4: Build report
+                    if module == "target" and intent["entities"]["targets"]:
+                        return await _pipeline_target(session, intent["entities"])
+                    elif module == "disease" and intent["entities"]["diseases"]:
+                        return await _pipeline_disease(session, intent["entities"])
+                    elif module == "company" and intent["entities"]["companies"]:
+                        return await _pipeline_company(session, intent["entities"])
+                    elif module == "trial":
+                        return await _pipeline_trial(session, intent)
+                    else:
+                        return await _pipeline_drug(session, intent)
+        except Exception as e:
+            print(f"[Agent] MCP error: {e}")
+
+    # Step 3: Fallback to knowledge base
+    thinking = build_agent_thinking(intent, mcp_available, None)
     report = ""
 
-    if mcp_data and mcp_data.get("items"):
-        # Live MCP data
-        items = mcp_data["items"]
-        total = mcp_data.get("total", len(items))
-        report = build_drug_report(items, f"Results for \"{entity_name}\"", total)
-    elif module == "target":
-        # Knowledge base fallback for targets
+    if module == "target":
         target_key = entity_name.upper()
         target_data = MOCK_TARGETS.get(target_key)
         if target_data:
             report = build_target_report(target_data)
         else:
-            report = build_drug_report(
-                MOCK_DRUG_SEARCH["default"],
-                f"Results for \"{entity_name}\" (target overview)",
-                len(MOCK_DRUG_SEARCH["default"])
-            )
+            report = build_drug_report(MOCK_DRUG_SEARCH["default"],
+                                       f"Results for \"{entity_name}\"", len(MOCK_DRUG_SEARCH["default"]))
     elif module == "disease":
-        # Knowledge base fallback for diseases
         disease_key = None
         for kw, val in DISEASE_KEYWORDS.items():
             if val.upper() == entity_name.upper():
                 disease_key = val
                 break
-        if not disease_key:
-            disease_key = entity_name
-        disease_data = MOCK_DISEASES.get(disease_key)
+        disease_data = MOCK_DISEASES.get(disease_key or entity_name)
         if disease_data:
             report = build_disease_report(disease_data)
         else:
-            report = build_drug_report(
-                MOCK_DRUG_SEARCH["default"],
-                f"Results for \"{entity_name}\" (disease overview)",
-            )
+            report = build_drug_report(MOCK_DRUG_SEARCH["default"], f"Results for \"{entity_name}\"")
     elif module == "company":
-        # Knowledge base fallback for companies
         company_data = MOCK_COMPANIES.get(entity_name)
         if company_data:
             report = build_company_report(company_data)
         else:
-            report = f"## 🏢 {entity_name}\n\n*Detailed company profile not available in demo mode. "
-            report += "Connect a PatSnap API key for live data.*"
+            report = f"## 🏢 {entity_name}\n\n*Company data not available in demo mode. Set PATSNAP_API_KEY for live data.*"
     else:
-        # Default drug report from knowledge base
-        report = build_drug_report(
-            MOCK_DRUG_SEARCH["default"],
-            f"Results for \"{entity_name}\"",
-        )
+        report = build_drug_report(MOCK_DRUG_SEARCH["default"], f"Results for \"{entity_name}\"")
 
     return thinking, report
 
@@ -1355,18 +1845,6 @@ def build_app():
 
     with gr.Blocks(
         title="PatSnap Pharma Intelligence",
-        css=CUSTOM_CSS,
-        theme=gr.themes.Soft(
-            primary_hue="blue",
-            secondary_hue="emerald",
-            neutral_hue="slate",
-        ).set(
-            body_text_color="*neutral_900",
-            body_text_color_subdued="*neutral_800",
-            block_title_text_color="*neutral_900",
-            block_label_text_color="*neutral_800",
-            link_text_color="*primary_600",
-        ),
         analytics_enabled=False,
     ) as app:
         create_header()
@@ -1428,6 +1906,15 @@ def build_app():
                 )
 
                 # Wire up agent chat
+                _scroll_js = """
+                () => {
+                    setTimeout(() => {
+                        const el = document.querySelector('.thinking-steps');
+                        if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+                    }, 100);
+                }
+                """
+
                 async def handle_chat(query):
                     thinking, report = await run_agent(query)
                     thinking_html = f"<div class='thinking-steps'>{thinking}</div>"
@@ -1437,12 +1924,14 @@ def build_app():
                     fn=handle_chat,
                     inputs=[chat_input],
                     outputs=[thinking_display, report_display],
+                    js=_scroll_js,
                 )
 
                 for btn, prompt in example_btns:
                     btn.click(
                         fn=lambda p=prompt: p,
                         outputs=[chat_input],
+                        js=_scroll_js,
                     ).then(
                         fn=handle_chat,
                         inputs=[chat_input],
@@ -1564,4 +2053,16 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=7860,
         show_error=True,
+        css=CUSTOM_CSS,
+        theme=gr.themes.Soft(
+            primary_hue="blue",
+            secondary_hue="emerald",
+            neutral_hue="slate",
+        ).set(
+            body_text_color="*neutral_900",
+            body_text_color_subdued="*neutral_800",
+            block_title_text_color="*neutral_900",
+            block_label_text_color="*neutral_800",
+            link_text_color="*primary_600",
+        ),
     )

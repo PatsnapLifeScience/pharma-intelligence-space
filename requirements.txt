@@ -1,3 +1,2 @@
 gradio
-huggingface_hub<1.0
 mcp
